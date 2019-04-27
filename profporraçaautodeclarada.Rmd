@@ -1,0 +1,199 @@
+---
+title: "Professores por raça autodeclarada."
+author: "Luan G. Cândido"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## O problema: brancos ainda são enorme maioria entre os professores. 
+
+O objetivo deste documento é identificar o número de docentes por raça autodeclarada
+da Educação Superior brasileira, das Universidades Federais e, em específico, da
+Universidade Federal Fluminense (UFF). Com este dado pretendemos ressaltar que,
+apesar do sucesso da política de cotas no âmbito da popularização do corpo estudantil,
+as Instituições de Ensino Superior (IES) ainda são marcadas por um intenso quadro de
+inequidade racial. Como veremos, a participação de brancos ainda é esmagadoramente
+maior que a de negros, que por sua vez é maior que a de amarelos e indígenas.
+
+Apesar das diversas particularidades relativas ao processo de contratação de
+professores em cada IES e frente ao sucesso da política de cotas na promoção de
+equidade racial na composição do corpo estudantil, acreditamos que este panorama
+aponta para a possibilidade de adoção de uma política de cotas nos programas de pós
+graduação e, principalmente, nos concursos para contratação de novos professores. 
+
+## Metodologia.
+
+Os dados foram produzidos a partir do software R e seu código estará disponíve no
+[github](https://github.com/luangcandido). A base de dados utilizada para o cálculo foi o Censo da Educação Superior
+(INEP), maior e mais consolidada fonte de informações sobre a Educação Superior no
+Brasil. Mais especificamente, usou-se como base a tabela "DM_DOCENTES.CSV" do
+Censo da Educação Superior de 2017.
+
+Uma ressalva é interessante de ser feita: as possibilidades de análise sobre a
+distribuição dos docentes por raça autodeclarada colocadas pelo Censo são muito
+maiores. Esse resultado poderia ser observado para IES estaduais, municipais, privadas
+e especiais; para homens e mulheres; para docentes em exercício e afastados; por grau
+de escolaridade; por regime de trabalho; por idade; por nacionalidade e muitas outras
+variáveis presentes na tabela de docentes.
+
+Uma desagregação que seria especialmente interessante e que não é possível usando
+exclusivamente o Censo é a desagregação por curso e/ou departamento onde o docente
+leciona. Todavia, este resultado poderia ser calculado a partir de um cruzamento das
+informações do Censo com dados das próprias Instituições. Mais especificamente, a
+relação de Códigos (gerado pelo INEP, presente no Censo) dos docentes por
+departamento ou curso. 
+
+## Resultados.
+
+No gráficos 1 são expostos o número de professores por raça autodeclarada para a
+Educação Superior brasileira como um todo. Ou seja: quantos docentes se
+autodeclararam brancos; quantos não quiseram declarar sua raça; quantos se
+autodeclararam pardos; quantos se autodeclararam pretos; quanto se autodeclararam
+amarelos; e quantos se autodeclararam indígenas. Neste caso, seguindo abordagens
+como as do IBGE sobre questões raciais, pretos e pardos serão tratados ao longo do
+texto como "negros". 
+
+
+```{r Gráfico 1, results="asis", echo=FALSE, warning=FALSE, message=FALSE, fig.height = 5, fig.width = 6}
+library(dplyr)
+library(ggrepel)
+library(ggplot2)
+
+DOCENTES17CSV <- read.csv("~/MICRODADOS_CENSUP/2017/Microdados_Educacao_Superior_2017/DADOS/DM_DOCENTE.CSV", sep = "|")
+DOCENTES17 <- as.data.frame(DOCENTES17CSV)
+
+TABLE1 <- as.data.frame(table(DOCENTES17$TP_COR_RACA))
+TABLE1 <- TABLE1 %>% 
+  mutate("Raça_Autodeclarada" = case_when(Var1 == 0 ~ "Não quis\ndeclarar",
+                                              Var1 == 1 ~ "Branca",
+                                              Var1 == 2 ~ "Preta",
+                                              Var1 == 3 ~ "Parda",
+                                              Var1 == 4 ~ "Amarela",
+                                              Var1 == 5 ~ "Indígena")) %>% 
+  arrange(desc(Freq)) %>% 
+  mutate(Raça_Autodeclarada = factor(Raça_Autodeclarada, Raça_Autodeclarada))
+  
+g1 <- ggplot(data = TABLE1, mapping = aes(x = as.factor(Raça_Autodeclarada), y = Freq))
+g1 + geom_col(aes(fill = Raça_Autodeclarada)) +
+  scale_fill_brewer(palette = "Set2") +
+  geom_label_repel(aes(label = Freq)) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  labs(title = "Número de professores por raça autodeclarada",
+       subtitle = "Considerando toda a Educação Superior",
+       x = NULL, y = "Número de Professores",
+       caption = "Censo da Educação Superior. Elaboração Luan G. Cândido.")
+
+```
+
+Como podemos ver, a participação de brancos é muito maior do que a de todas as outras
+raças. De um total de 392.036 professores que dão aula no Ensino Superior Brasileiro,
+209.280 são brancos (53,12%). Na "segunda colocação" estão aqueles que não
+quiseram autodeclarar sua raça: 117.242 docentes (29,9%). As pessoas que se
+autodeclararam negras eram 62.239 (15,87%). Amarelos eram 3805 (0,97%). O pior
+resultado fica por conta da participação de indígenas, sendo apenas 470 professores
+autodeclarados desta raça. Isso representa apenas 0,11% do total de professores.
+
+No gráfico 2, veremos o resultado da mesma estatística, mas calculada apenas para as
+Universidades Públicas. 
+
+```{r Gráfico 2, results="asis", echo=FALSE, warning=FALSE, message=FALSE, fig.height = 5, fig.width = 6}
+library(dplyr)
+library(ggrepel)
+library(ggplot2)
+DOCENTES17CSV <- read.csv("~/MICRODADOS_CENSUP/2017/Microdados_Educacao_Superior_2017/DADOS/DM_DOCENTE.CSV", sep = "|")
+DOCENTES17 <- as.data.frame(DOCENTES17CSV)
+
+DOCENTES17 <- DOCENTES17 %>%      filter(TP_CATEGORIA_ADMINISTRATIVA == 1) %>% 
+filter(TP_ORGANIZACAO_ACADEMICA == 1)
+
+TABLE1 <- as.data.frame(table(DOCENTES17$TP_COR_RACA))
+TABLE1 <- TABLE1 %>% 
+  mutate("Raça_Autodeclarada" = case_when(Var1 == 0 ~ "Não quis\ndeclarar",
+                                              Var1 == 1 ~ "Branca",
+                                              Var1 == 2 ~ "Preta",
+                                              Var1 == 3 ~ "Parda",
+                                              Var1 == 4 ~ "Amarela",
+                                              Var1 == 5 ~ "Indígena")) %>% 
+  arrange(desc(Freq)) %>% 
+  mutate(Raça_Autodeclarada = factor(Raça_Autodeclarada, Raça_Autodeclarada))
+  
+g1 <- ggplot(data = TABLE1, mapping = aes(x = as.factor(Raça_Autodeclarada), y = Freq))
+g1 + geom_col(aes(fill = Raça_Autodeclarada)) +
+  scale_fill_brewer(palette = "Set2") +
+  geom_label_repel(aes(label = Freq)) +
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none") +
+  labs(title = "Número de professores por raça autodeclarada",
+       subtitle = "Considerando as Universidades Públicas Federais",
+       x = NULL, y = "Número de Professores",
+       caption = "Censo da Educação Superior. Elaboração Luan G. Cândido.")
+
+```
+
+Neste caso, podemos ver que a realidade é análoga a do ensino superior como um todo:
+predominância do número de brancos, seguidos pelo número de professores negros e, em seguida, amarelos e indígenas. No entanto, há aqui, uma distinção importante: o número de docentes que não quiseram declarar sua raça supera o número de brancos. De um total de 95.772 docentes de Universidades
+Públicas Federais, 49.898 (52,1%) não quiseram declarar sua raça. Os que se autodeclararam brancos foram 33.613 (35%). Autodeclarados negros foram 11.173 (11,7%). Amarelos,
+937 docentes (0,9%). Novamente o pior resultado é da autodeclaração de indígenas,
+com 151 (0,15%) professores nas Universidades Federais. Há, contudo, uma
+diminuição relativa na participação de negros nas Universidades Federais frente ao
+Ensino Superior como um todo: 11,7% contra 15,87%.
+
+Vejamos agora a realidade da UFF:
+
+```{r Gráfico 3, results="asis", echo=FALSE, warning=FALSE, message=FALSE, fig.height = 5, fig.width = 6}
+library(dplyr)
+library(ggrepel)
+library(ggplot2)
+
+DOCENTES17CSV <- read.csv("~/MICRODADOS_CENSUP/2017/Microdados_Educacao_Superior_2017/DADOS/DM_DOCENTE.CSV", sep = "|")
+DOCENTES17 <- as.data.frame(DOCENTES17CSV)
+
+DOCENTES17 <- DOCENTES17 %>%
+  filter(CO_IES == "572")
+
+TABLE1 <- as.data.frame(table(DOCENTES17$TP_COR_RACA))
+TABLE1 <- TABLE1 %>% 
+  mutate("Raça_Autodeclarada" = case_when(Var1 == 0 ~ "Não quis\ndeclarar",
+                                              Var1 == 1 ~ "Branca",
+                                              Var1 == 2 ~ "Preta",
+                                              Var1 == 3 ~ "Parda",
+                                              Var1 == 4 ~ "Amarela",
+                                              Var1 == 5 ~ "Indígena")) %>% 
+  arrange(desc(Freq)) %>% 
+  mutate(Raça_Autodeclarada = factor(Raça_Autodeclarada, Raça_Autodeclarada))
+  
+g1 <- ggplot(data = TABLE1, mapping = aes(x = as.factor(Raça_Autodeclarada), y = Freq))
+g1 + geom_col(aes(fill = Raça_Autodeclarada)) +
+  scale_fill_brewer(palette = "Set2") +
+  geom_label_repel(aes(label = Freq)) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  labs(title = "Número de professores por raça autodeclarada",
+       subtitle = "Considerando a Universidade Federal Fluminense",
+       x = NULL, y = "Número de Professores",
+       caption = "Censo da Educação Superior. Elaboração Luan G. Cândido.")
+
+```
+
+De um total de 3.616 professores, 1.924 são autodeclarados brancos (53,2%). Não
+quiseram declarar 1.499 (41,4%). Autodeclarados negros são apenas 168 docentes
+(4,6%). Amarelos são 22 (0,6%). E mais uma vez a pior estatística é a de docentes
+autodecarados indígenas: são apenas 3 na UFF inteira, o que representa 0,08% do total.
+
+No geral, a situação da UFF se assemelha ao do resto do país: predominância daqueles
+que se autodeclaram brancos. Contudo, podemos observar um nítido quadro de
+deterioração em termos de equidade racial. Brancos permanecem em uma proporção
+parecida do total (53% na UFF contra 35% nas U.F. e 53% na educação superior como
+um todo). O número que não quis declarar cresce expressivamente em relação à Educação Superior, mas ainda é menor que a média das Universidades Federais: são cerca
+de 40%, contra 52,1% das U.F. e 29,9% do todo. Em relação ao percentual de autodeclarados não-brancos, há uma queda generalizada: negros são menos de 5%, contra
+cerca de 12% nas U.F. e 15% no todo. Amarelos caem de de cerca de 0,9% para 0,6%. E
+indígenas caem de valores extremamente pequenos, 0,15% e 0,11%, para 0,08%. Ou
+seja, praticamente não há participação de indígenas nos docentes da UFF: são apenas 3
+de 3.616.
+
+Antes de finalizar e como forma de realçar o quadro de inequidade racial apresentado, é justo lembrar que, de acordo com o [Censo Demográfico de 2010](https://sidra.ibge.gov.br/Tabela/3175), a distribuição da população residente no Brasil por raça era a seguinte: 50,74% eram negros (7,61% pretos, 43,13% pardos); 47,73% eram brancos; 1,09% eram amarelos; e 0,43% indígenas.
